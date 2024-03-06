@@ -14,6 +14,8 @@ pub mod io;
 pub mod mem;
 mod panic;
 pub mod task;
+
+#[cfg(test)]
 mod test;
 
 use conquer_once::spin::OnceCell;
@@ -22,18 +24,17 @@ pub use io::vga;
 use mem::frame::BootInfoFrameAllocator;
 use multiboot2::{BootInformation, BootInformationHeader};
 
-static mut BOOT_INFO: OnceCell<BootInformation<'static>> = OnceCell::uninit();
+static BOOT_INFO: OnceCell<BootInformation<'static>> = OnceCell::uninit();
 
 #[no_mangle]
 extern "C" fn kernel_main(multiboot_info_addr: usize) {
     println!("initializing kernel");
     println!("loading multiboot2 info");
-    let boot_info =
-        unsafe { BootInformation::load(multiboot_info_addr as *const BootInformationHeader) }
-            .expect("failed to load boot info");
 
-    unsafe { BOOT_INFO.init_once(|| boot_info) };
-    let boot_info = unsafe { BOOT_INFO.get().unwrap() };
+    let boot_info = BOOT_INFO.get_or_init(|| {
+        unsafe { BootInformation::load(multiboot_info_addr as *const BootInformationHeader) }
+            .expect("failed to load boot info")
+    });
 
     println!("loading memory map");
     let memory_map = boot_info
@@ -63,7 +64,10 @@ extern "C" fn kernel_main(multiboot_info_addr: usize) {
 
     #[cfg(test)]
     {
-        serial_println!("running kernel tests");
+        println!("running kernel tests");
         test::run();
     }
+
+    println!("passing to OS");
+    // TODO: should this be changed?
 }

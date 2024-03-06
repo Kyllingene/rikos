@@ -8,13 +8,13 @@ good_memory_allocator = "0.1.7"
 spin = "0.9.8"
 uart_16550 = "0.3.0"
 volatile = "0.5.1"
-x2apic = "0.4.2"
+# x2apic = "0.4.3"
+pic8259 = "0.10.1"
 x86_64 = "0.14.10"
 
-[dependencies.lazy_static]
-version = "1.4.0"
+[dependencies.circular-buffer]
+version = "0.1.6"
 default-features = false
-features = ["spin_no_std"]
 
 [dependencies.multiboot2]
 version = "0.18.1"
@@ -37,4 +37,4 @@ features = ["alloc"]
 [lib]
 name = "kernel"
 path = "src/lib.rs"
-crate-type = ["staticlib", "rlib"]
+crate-type = ["staticlib", "lib"]

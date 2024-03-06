@@ -2,7 +2,7 @@
 
 use core::{cmp::min, fmt, ptr::NonNull};
 
-use lazy_static::lazy_static;
+use conquer_once::spin::OnceCell;
 use spin::Mutex;
 use volatile::{VolatilePtr, VolatileRef};
 
@@ -24,8 +24,10 @@ pub const DEFAULT_BG: Color = Color::Black;
 
 // pub const DEFAULT_COLOR: ColorCode = ColorCode::new(Color::White, Color::Black);
 
-lazy_static! {
-    pub static ref WRITER: Mutex<Writer> = Mutex::new(Writer::new());
+pub static WRITER: OnceCell<Mutex<Writer>> = OnceCell::uninit();
+
+pub fn init_writer() -> Mutex<Writer> {
+    Mutex::new(Writer::new())
 }
 
 /// A VGA character. Note: use `.into::<u16>()`
@@ -319,7 +321,7 @@ impl core::fmt::Write for Writer {
 /// Moves the cursor one character the the right,
 /// if not already at the end of a line.
 pub fn right() {
-    let mut writer = WRITER.lock();
+    let mut writer = WRITER.get_or_init(init_writer).lock();
 
     if writer.column != BUFFER_WIDTH
         && u16::from(writer.get_cell(writer.column, BUFFER_HEIGHT - 1).unwrap()) & 0xff != 0
@@ -331,7 +333,7 @@ pub fn right() {
 /// Moves the cursor one character to the left,
 /// if not already at the start of a line.
 pub fn left() {
-    let mut writer = WRITER.lock();
+    let mut writer = WRITER.get_or_init(init_writer).lock();
 
     if writer.column != 0 {
         writer.column -= 1;
@@ -340,12 +342,12 @@ pub fn left() {
 
 /// Returns the cursor to the start of the line.
 pub fn home() {
-    WRITER.lock().column = 0;
+    WRITER.get_or_init(init_writer).lock().column = 0;
 }
 
 /// Puts the cursor after any printed characters on the line.
 pub fn end() {
-    let mut writer = WRITER.lock();
+    let mut writer = WRITER.get_or_init(init_writer).lock();
 
     for i in 0..BUFFER_WIDTH {
         let ch: u16 = writer.get_cell(i, BUFFER_HEIGHT - 1).unwrap().into();
@@ -363,12 +365,12 @@ pub fn end() {
 
 /// Creates a new line.
 pub fn enter() {
-    WRITER.lock().flush();
+    WRITER.get_or_init(init_writer).lock().flush();
 }
 
 /// Deletes the last character. Doesn't cross lines.
 pub fn backspace() {
-    let mut writer = WRITER.lock();
+    let mut writer = WRITER.get_or_init(init_writer).lock();
 
     if writer.column != 0 {
         let col = writer.column - 1;
@@ -395,31 +397,31 @@ pub fn backspace() {
 
 /// Clears the screen and resets the cursor.
 pub fn clear() {
-    WRITER.lock().clear();
+    WRITER.get_or_init(init_writer).lock().clear();
 }
 
 /// Sets the VGA blink. Affects future characters.
 #[inline]
 pub fn set_blink(blink: bool) {
-    WRITER.lock().blink = blink;
+    WRITER.get_or_init(init_writer).lock().blink = blink;
 }
 
 /// Sets the foreground color. Affects future characters.
 #[inline]
 pub fn set_fg(fg: Color) {
-    WRITER.lock().fg = fg;
+    WRITER.get_or_init(init_writer).lock().fg = fg;
 }
 
 /// Sets the background color. Affects future characters.
 #[inline]
 pub fn set_bg(bg: Color) {
-    WRITER.lock().bg = bg;
+    WRITER.get_or_init(init_writer).lock().bg = bg;
 }
 
 /// Resets the foreground/background colors and blink.
 #[inline]
 pub fn reset() {
-    let mut writer = WRITER.lock();
+    let mut writer = WRITER.get_or_init(init_writer).lock();
     writer.blink = false;
     writer.fg = DEFAULT_FG;
     writer.bg = DEFAULT_BG;
@@ -456,5 +458,11 @@ macro_rules! println {
 #[doc(hidden)]
 pub fn _print(args: fmt::Arguments) {
     use core::fmt::Write;
-    x86_64::instructions::interrupts::without_interrupts(|| WRITER.lock().write_fmt(args).unwrap());
+    x86_64::instructions::interrupts::without_interrupts(|| {
+        WRITER
+            .get_or_init(init_writer)
+            .lock()
+            .write_fmt(args)
+            .unwrap()
+    });
 }

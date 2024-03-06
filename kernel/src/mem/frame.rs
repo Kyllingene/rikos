@@ -6,7 +6,7 @@ use x86_64::{
     // VirtAddr,
 };
 
-use crate::interrupt::apic::LAPIC_START;
+// use crate::interrupt::apic::LAPIC_START;
 
 pub const P4: *mut PageTable = 0xffffffff_fffff000 as *mut _;
 
@@ -31,7 +31,8 @@ impl BootInfoFrameAllocator {
     fn usable_frames(&self) -> impl Iterator<Item = PhysFrame> {
         let usable_regions = self.mem_map.iter().filter(|r| {
             MemoryAreaType::from(r.typ()) == MemoryAreaType::Available
-                && !((r.start_address()..r.end_address()).contains(&LAPIC_START))
+            // TODO: is this needed?
+            // && !((r.start_address()..r.end_address()).contains(&LAPIC_START))
         });
 
         let addr_ranges = usable_regions.map(|r| r.start_address()..r.end_address());
@@ -44,10 +45,10 @@ impl BootInfoFrameAllocator {
 unsafe impl FrameAllocator<Size4KiB> for BootInfoFrameAllocator {
     fn allocate_frame(&mut self) -> Option<PhysFrame<Size4KiB>> {
         let mut frames = self.usable_frames();
-        let mut frame_opt = frames.nth(self.next);
+        let mut new_frame = frames.nth(self.next);
 
         if let Some(section) = &self.elf_section {
-            if let Some(mut frame) = &frame_opt {
+            if let Some(mut frame) = &new_frame {
                 let mut end = frame.start_address() + frame.size();
                 let mut range = frame.start_address()..end;
                 while range.contains(&PhysAddr::new(section.start_address()))
@@ -59,13 +60,13 @@ unsafe impl FrameAllocator<Size4KiB> for BootInfoFrameAllocator {
                     self.next += 1;
                 }
 
-                frame_opt = Some(frame);
+                new_frame = Some(frame);
                 self.elf_section = self.elf_sections.next();
             }
         }
 
         self.next += 1;
-        frame_opt
+        new_frame
     }
 }
 

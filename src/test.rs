@@ -1,6 +1,6 @@
-fn main() {
-    use std::process::{Command, Stdio};
+use std::process::{Command, Stdio};
 
+fn main() {
     let output = Command::new("qemu-system-x86_64")
         .args([
             "-drive",

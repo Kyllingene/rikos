@@ -4,16 +4,17 @@ version = "0.1.0"
 edition = "2021"
 
 [build-dependencies]
-#kernel = { path = "kernel", artifact = "staticlib", target = "x86_64-unknown-none" }
-kernel = { package = "riscv-kernel", path = "riscv-kernel", artifact = "staticlib", target = "riscv64gc-unknown-none-elf" }
-#os = { path = "os", artifact = "staticlib", target = "riscv64gc-unknown-none-elf" }
+kernel = { path = "kernel", artifact = "staticlib", target = "x86_64-unknown-none" }
+os = { path = "os", artifact = "staticlib", target = "x86_64-unknown-none" }
 
 [workspace]
-members = ["kernel", "riscv-kernel", "os"]
-#members = ["riscv-kernel", "os"]
+members = ["kernel", "os"]
 
-[dependencies]
-good_memory_allocator = "0.1.7"
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
 
 [[test]]
 name = "test"

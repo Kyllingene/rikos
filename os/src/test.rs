@@ -1,31 +1,48 @@
-#![cfg(test)]
-
-extern crate alloc;
-
 use alloc::boxed::Box;
 
-use kernel::{serial_print, serial_println};
+use kernel::{mem::HEAP_SIZE, serial_print, serial_println};
 
-static TESTS: [fn(); 3] = [basic_assertion, many_boxes, many_boxes_with_long_lived];
+macro_rules! tests {
+    ( $( $test:ident ),* $(,)? ) => {
+        static TESTS: &[(&'static str, fn())] = &[$(
+            (stringify!($test), $test)
+        ),*];
+    };
+}
 
-pub fn run() {
-    serial_println!("running {} tests", TESTS.len());
-    for test in TESTS {
-        test();
+tests! {
+    basic_assertion,
+    many_boxes_with_long_lived,
+    many_boxes,
+}
+
+pub trait Testable: Sync {
+    fn run_test(&self);
+}
+
+impl Testable for (&'static str, fn()) {
+    fn run_test(&self) {
+        serial_print!("test {}...\t", self.0);
+        (self.1)();
         serial_println!("ok");
     }
 }
 
+pub fn run() {
+    serial_println!("running {} tests", TESTS.len());
+    for test in TESTS {
+        test.run_test();
+    }
+}
+
 fn basic_assertion() {
-    serial_print!("test basic_assertion...\t");
     assert_eq!(1, 1);
     assert!(1 != 2);
 }
 
 fn many_boxes_with_long_lived() {
-    serial_print!("test many_boxes_with_long_lived...\t");
     let long_lived_box = Box::new(125);
-    for i in 0..100 * 1024 {
+    for i in 0..HEAP_SIZE {
         let short_box = Box::new(i);
         assert_eq!(*long_lived_box, 125);
         assert_eq!(*short_box, i);
@@ -35,8 +52,7 @@ fn many_boxes_with_long_lived() {
 }
 
 fn many_boxes() {
-    serial_print!("test many_boxes...\t");
-    for i in 0..100 * 1024 {
+    for i in 0..HEAP_SIZE {
         let short_box = Box::new(i);
         assert_eq!(*short_box, i);
     }

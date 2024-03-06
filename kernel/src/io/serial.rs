@@ -1,16 +1,16 @@
-use lazy_static::lazy_static;
+use conquer_once::spin::OnceCell;
 use spin::Mutex;
 use uart_16550::SerialPort;
 
-lazy_static! {
-    /// The standard first serial port.
-    /// Use the [`serial_print`] and [`serial_println`]
-    /// macros to print to this.
-    pub static ref SERIAL1: Mutex<SerialPort> = {
-        let mut serial_port = unsafe { SerialPort::new(0x3F8) };
-        serial_port.init();
-        Mutex::new(serial_port)
-    };
+/// The standard first serial port.
+/// Use the [`serial_print`] and [`serial_println`]
+/// macros to print to this.
+pub static SERIAL1: OnceCell<Mutex<SerialPort>> = OnceCell::uninit();
+
+pub fn init_serial1() -> Mutex<SerialPort> {
+    let mut serial_port = unsafe { SerialPort::new(0x3F8) };
+    serial_port.init();
+    Mutex::new(serial_port)
 }
 
 /// Prints to the host through the serial interface.
@@ -32,6 +32,7 @@ pub fn _print(args: ::core::fmt::Arguments) {
 
     x86_64::instructions::interrupts::without_interrupts(|| {
         SERIAL1
+            .get_or_init(init_serial1)
             .lock()
             .write_fmt(args)
             .expect("Printing to serial failed")

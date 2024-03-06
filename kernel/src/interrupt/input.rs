@@ -1,81 +1,66 @@
-use core::task::Poll;
+use core::sync::atomic::{AtomicU64, Ordering};
 
-use futures_util::Future;
-use x86_64::instructions::port::Port;
+use crate::serial_println;
 
-static mut TIMER_COUNT: usize = 0;
+static TIMER_COUNT: AtomicU64 = AtomicU64::new(0);
 
 /// Sleeps for a certain number of milliseconds.
-///
-/// Returns a [`Sleeper`], which implements [`Future`].
 #[allow(unused)]
-pub fn sleep(millis: usize) -> impl Future<Output = ()> {
-    unsafe { TIMER_COUNT = 0 };
+pub fn sleep(millis: u64) {
+    TIMER_COUNT.store(0, Ordering::SeqCst);
 
-    let mut channel_port = Port::new(0x43);
-    unsafe { channel_port.write(0x00 as u8) };
-
-    let mut divisor_port = Port::new(0x40);
-    unsafe { divisor_port.write(0xa9 as u8) };
-    unsafe { divisor_port.write(0x04 as u8) };
-
-    Sleeper(millis)
-}
-
-/// impl [`Future`] that returns [`Poll::Ready`] when a certain
-/// number of milliseconds have passed. Create via [`sleep`].
-pub struct Sleeper(usize);
-
-impl Future for Sleeper {
-    type Output = ();
-
-    fn poll(
-        self: core::pin::Pin<&mut Self>,
-        cx: &mut core::task::Context<'_>,
-    ) -> core::task::Poll<Self::Output> {
-        if unsafe { TIMER_COUNT } >= self.0 {
-            cx.waker().wake_by_ref();
-            Poll::Ready(())
-        } else {
-            Poll::Pending
-        }
+    while TIMER_COUNT.load(Ordering::SeqCst) < millis {
+        serial_println!("waiting {}", TIMER_COUNT.load(Ordering::SeqCst));
+        x86_64::instructions::hlt();
     }
 }
 
 pub(super) mod handlers {
+    use crate::println;
+
+    use crate::interrupt::apic::InterruptIndex;
+    use crate::interrupt::apic::PICS;
+    use crate::interrupt::input::TIMER_COUNT;
     use crate::serial_println;
 
     use x86_64::instructions::port::Port;
     use x86_64::structures::idt::InterruptStackFrame;
 
-    fn eoi() {
+    fn eoi(irq: InterruptIndex) {
         unsafe {
-            crate::interrupt::apic::LAPIC
-                .get()
-                .expect("lapic uninitialized")
-                .lock()
-                .end_of_interrupt();
+            PICS.lock().notify_end_of_interrupt(irq as u8);
         }
+        // unsafe {
+        //     crate::interrupt::apic::LAPIC
+        //         .get()
+        //         .expect("lapic uninitialized")
+        //         .lock()
+        //         .end_of_interrupt();
+        // }
     }
 
-    pub extern "x86-interrupt" fn timer_handler(_stack_frame: InterruptStackFrame) {
-        unsafe { super::TIMER_COUNT = super::TIMER_COUNT.wrapping_add(1) };
-        eoi();
+    pub extern "x86-interrupt" fn timer(_stack_frame: InterruptStackFrame) {
+        let tick = TIMER_COUNT.fetch_add(1, core::sync::atomic::Ordering::SeqCst);
+        println!("{tick}");
+        eoi(InterruptIndex::Timer);
     }
 
-    pub extern "x86-interrupt" fn keyboard_handler(_stack_frame: InterruptStackFrame) {
+    pub extern "x86-interrupt" fn keyboard(_stack_frame: InterruptStackFrame) {
         let mut port = Port::new(0x60);
         let scancode: u8 = unsafe { port.read() };
         crate::task::keyboard::add_scancode(scancode);
 
-        eoi();
+        let mut port = Port::new(0x20);
+        unsafe { port.write(0x20_u8) };
+
+        eoi(InterruptIndex::Keyboard);
     }
 
-    pub extern "x86-interrupt" fn error_handler(_stack_frame: InterruptStackFrame) {
+    pub extern "x86-interrupt" fn error(_stack_frame: InterruptStackFrame) {
         panic!("APIC error");
     }
 
-    pub extern "x86-interrupt" fn spurious_handler(_stack_frame: InterruptStackFrame) {
+    pub extern "x86-interrupt" fn spurious(_stack_frame: InterruptStackFrame) {
         serial_println!("spurious interrupt");
         // eoi();
     }

@@ -1,19 +1,29 @@
-#![cfg(test)]
-
 use alloc::boxed::Box;
 
 use crate::{mem::allocator::HEAP_SIZE, serial_print, serial_println};
 
-static TESTS: [fn(); 3] = [basic_assertion, many_boxes, many_boxes_with_long_lived];
+macro_rules! tests {
+    ( $( $test:ident ),* $(,)? ) => {
+        static TESTS: &[(&'static str, fn())] = &[$(
+            (stringify!($test), $test)
+        ),*];
+    };
+}
+
+tests! {
+    basic_assertion,
+    many_boxes_with_long_lived,
+    many_boxes,
+}
 
 pub trait Testable: Sync {
     fn run_test(&self);
 }
 
-impl Testable for fn() {
+impl Testable for (&'static str, fn()) {
     fn run_test(&self) {
-        serial_print!("test {}...\t", core::any::type_name::<Self>());
-        self();
+        serial_print!("test {}...\t", self.0);
+        (self.1)();
         serial_println!("ok");
     }
 }
