@@ -125,7 +125,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b1651659e016ea4259760966432aebcc96c81e26743fb018c59585ddd677127e"
 dependencies = [
  "either",
- "spin",
+ "spin 0.9.8",
 ]
 
 [[package]]
@@ -137,12 +137,22 @@ dependencies = [
  "crossbeam-queue",
  "futures-util",
  "good_memory_allocator",
+ "lazy_static",
  "multiboot2",
  "pic8259",
- "spin",
+ "spin 0.9.8",
  "uart_16550",
  "volatile 0.5.1",
  "x86_64",
+]
+
+[[package]]
+name = "lazy_static"
+version = "1.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
+dependencies = [
+ "spin 0.5.2",
 ]
 
 [[package]]
@@ -181,7 +191,7 @@ dependencies = [
  "conquer-once 0.4.0",
  "kernel",
  "pc-keyboard",
- "spin",
+ "spin 0.9.8",
 ]
 
 [[package]]
@@ -277,6 +287,12 @@ name = "scopeguard"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
+
+[[package]]
+name = "spin"
+version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
 
 [[package]]
 name = "spin"

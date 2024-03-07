@@ -1,15 +1,11 @@
 use conquer_once::spin::OnceCell;
-use x86_64::structures::{
-    idt::InterruptDescriptorTable,
-    paging::{FrameAllocator, Mapper, Size4KiB},
-};
+use x86_64::structures::idt::InterruptDescriptorTable;
 
 pub(crate) mod apic;
 mod exception;
-pub mod input;
+pub mod handlers;
 
 use apic::InterruptIndex;
-use input::handlers;
 
 use crate::{mem::gdt, println};
 
@@ -36,13 +32,11 @@ fn init_idt() -> InterruptDescriptorTable {
     idt
 }
 
-pub fn init(
-    mapper: &mut impl Mapper<Size4KiB>,
-    frame_allocator: &mut impl FrameAllocator<Size4KiB>,
-) {
+pub fn init() {
     println!("initializing idt");
     IDT.get_or_init(init_idt).load();
 
     println!("initializing input");
-    apic::init(mapper, frame_allocator);
+    // apic::init(mapper, frame_allocator);
+    apic::init();
 }

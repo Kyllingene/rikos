@@ -11,6 +11,7 @@ volatile = "0.5.1"
 # x2apic = "0.4.3"
 pic8259 = "0.10.1"
 x86_64 = "0.14.10"
+lazy_static = { version = "1.4.0", default-features = false, features = ["spin_no_std"] }
 
 [dependencies.circular-buffer]
 version = "0.1.6"

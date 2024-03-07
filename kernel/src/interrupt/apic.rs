@@ -1,16 +1,9 @@
-#![allow(unused)]
 use crate::println;
 
-use conquer_once::spin::OnceCell;
 use pic8259::ChainedPics;
-use spin::Mutex;
 // use x2apic::ioapic::{IoApic, IrqFlags, IrqMode, RedirectionTableEntry};
 // use x2apic::lapic::{xapic_base, LocalApic, LocalApicBuilder, TimerDivide};
-use x86_64::{
-    instructions::port::Port,
-    structures::paging::{FrameAllocator, Mapper, Page, PageTableFlags, PhysFrame, Size4KiB},
-    PhysAddr, VirtAddr,
-};
+use x86_64::instructions::port::Port;
 
 pub const PIC_1_OFFSET: u8 = 32;
 pub const PIC_2_OFFSET: u8 = PIC_1_OFFSET + 8;
@@ -129,13 +122,23 @@ pub enum InterruptIndex {
 //     }
 // }
 
-pub fn init(
-    mapper: &mut impl Mapper<Size4KiB>,
-    frame_allocator: &mut impl FrameAllocator<Size4KiB>,
-) {
+fn init_timer() {
+    // Ensure we're on channel 0
+    let mut channel_port = Port::new(0x43);
+    unsafe { channel_port.write(0x00 as u8) };
+
+    // Set frequency to X
+    // TODO: find out what X is
+    let mut divisor_port = Port::new(0x40);
+    unsafe { divisor_port.write(0xa9 as u8) };
+    unsafe { divisor_port.write(0x04 as u8) };
+}
+
+pub fn init() {
     println!("initializing apic");
     // init_apic(mapper, frame_allocator);
     unsafe { PICS.lock().initialize() };
+    init_timer();
 
     println!("enabling interrupts");
     x86_64::instructions::interrupts::enable();

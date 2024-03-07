@@ -5,7 +5,6 @@ extern crate alloc;
 mod keyboard;
 
 use kernel::{
-    interrupt::input::sleep,
     print, println, serial_println,
     vga::{self, Color},
 };
@@ -33,14 +32,13 @@ fn welcome() {
 extern "C" fn os_main() {
     welcome();
 
-    loop {
-        sleep(100);
-        if let Some(key) = getch() {
-            serial_println!("{key:?}");
+    // loop {
+    if let Some(key) = getch() {
+        serial_println!("{key:?}");
 
-            if let Key::Char(ch) = key {
-                print!("{ch}");
-            }
+        if let Key::Char(ch) = key {
+            print!("{ch}");
         }
     }
+    // }
 }

@@ -13,7 +13,6 @@ pub mod io;
 
 pub mod mem;
 mod panic;
-pub mod task;
 
 #[cfg(test)]
 mod test;
@@ -53,7 +52,8 @@ extern "C" fn kernel_main(multiboot_info_addr: usize) {
     let mut mapper = unsafe { mem::frame::init() };
 
     println!("initializing interrupts");
-    interrupt::init(&mut mapper, &mut frame_allocator);
+    // interrupt::init(&mut mapper, &mut frame_allocator);
+    interrupt::init();
 
     println!("initializing memory");
     mem::init();
@@ -67,6 +67,11 @@ extern "C" fn kernel_main(multiboot_info_addr: usize) {
         println!("running kernel tests");
         test::run();
     }
+
+    serial_println!(
+        "kernel addr of TIMER_COUNT: {:p}",
+        core::ptr::addr_of!(crate::interrupt::handlers::TIMER_COUNT)
+    );
 
     println!("passing to OS");
     // TODO: should this be changed?
