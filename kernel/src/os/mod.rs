@@ -1,16 +1,14 @@
-#![no_std]
-
-extern crate alloc;
-
 mod keyboard;
 
-use kernel::{
-    print, println, serial_println,
+#[allow(unused_imports)]
+use crate::{
+    io::timer::{sleep, wait},
+    print, println,
     vga::{self, Color},
 };
 use keyboard::getch;
 
-use crate::keyboard::Key;
+use keyboard::Key;
 
 fn welcome() {
     vga::clear();
@@ -28,17 +26,15 @@ fn welcome() {
     vga::reset();
 }
 
-#[no_mangle]
-extern "C" fn os_main() {
+pub fn main() {
     welcome();
 
-    // loop {
-    if let Some(key) = getch() {
-        serial_println!("{key:?}");
-
-        if let Key::Char(ch) = key {
-            print!("{ch}");
+    loop {
+        wait();
+        if let Some(key) = getch() {
+            if let Key::Char(ch) = key {
+                print!("{ch}");
+            }
         }
     }
-    // }
 }

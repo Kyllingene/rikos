@@ -3,7 +3,6 @@
 #![feature(abi_x86_interrupt)]
 #![feature(lang_items)]
 
-// TODO: find out how to remove this
 extern crate alloc;
 
 pub mod interrupt;
@@ -12,6 +11,7 @@ pub mod interrupt;
 pub mod io;
 
 pub mod mem;
+mod os;
 mod panic;
 
 #[cfg(test)]
@@ -68,11 +68,7 @@ extern "C" fn kernel_main(multiboot_info_addr: usize) {
         test::run();
     }
 
-    serial_println!(
-        "kernel addr of TIMER_COUNT: {:p}",
-        core::ptr::addr_of!(crate::interrupt::handlers::TIMER_COUNT)
-    );
-
-    println!("passing to OS");
     // TODO: should this be changed?
+    println!("passing to OS");
+    os::main();
 }

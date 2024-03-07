@@ -15,15 +15,6 @@ fn main() {
         .strip_prefix("lib")
         .unwrap_or(kernel_name);
 
-    let os = PathBuf::from(std::env::var_os("CARGO_STATICLIB_FILE_OS").unwrap());
-    let os_path = os.parent().unwrap();
-    let os_name = os.file_name().unwrap().to_str().unwrap();
-    let os_name = os_name
-        .strip_suffix(".a")
-        .unwrap_or(os_name)
-        .strip_prefix("lib")
-        .unwrap_or(os_name);
-
     let mut asm: Vec<PathBuf> = fs::read_dir("kernel/asm")
         .expect("asm directory missing")
         .filter_map(|f| {
@@ -69,9 +60,6 @@ fn main() {
         .arg("-L")
         .arg(kernel_path)
         .args(["-l", kernel_name])
-        .arg("-L")
-        .arg(os_path)
-        .args(["-l", os_name])
         .output();
 
     if !output.expect("failed to run ld").status.success() {

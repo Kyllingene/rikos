@@ -38,11 +38,6 @@ pub extern "x86-interrupt" fn timer(_stack_frame: InterruptStackFrame) {
 }
 
 pub extern "x86-interrupt" fn keyboard(_stack_frame: InterruptStackFrame) {
-    serial_println!(
-        "interrupt addr of TIMER_COUNT: {:p}",
-        core::ptr::addr_of!(TIMER_COUNT)
-    );
-
     let mut port = Port::new(0x60);
     let code: u8 = unsafe { port.read() };
     add_scancode(code);

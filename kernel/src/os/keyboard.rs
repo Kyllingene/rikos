@@ -30,7 +30,7 @@ pub fn getch() -> Option<Key> {
     };
 
     let mut keyboard = KEYBOARD.get_or_init(init_kbd).lock();
-    let ev = keyboard.add_byte(kernel::io::keyboard::getch()?).ok()??;
+    let ev = keyboard.add_byte(crate::io::keyboard::getch()?).ok()??;
     let key = keyboard.process_keyevent(ev)?;
     Some(match key {
         DecodedKey::Unicode(ch) => match ch {

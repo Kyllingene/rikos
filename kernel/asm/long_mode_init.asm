@@ -2,7 +2,7 @@ global long_mode_start
 
 section .text
 extern kernel_main
-extern os_main
+; extern os_main
 ; extern p4_table
 
 bits 64
@@ -20,7 +20,7 @@ long_mode_start:
     
     ; lea rsi, [p4_table]
     call kernel_main
-    call os_main
+    ; call os_main
 
 .hlt_loop:
     hlt
