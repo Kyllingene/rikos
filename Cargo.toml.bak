@@ -1,0 +1,21 @@
+[package]
+name = "rikos"
+version = "0.1.0"
+edition = "2021"
+
+[build-dependencies]
+kernel = { path = "kernel", artifact = "staticlib", target = "x86_64-unknown-none" }
+
+[workspace]
+members = ["kernel"]
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+
+[[test]]
+name = "test"
+path = "src/test.rs"
+harness = false

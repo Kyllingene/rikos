@@ -3,21 +3,40 @@ name = "rikos"
 version = "0.1.0"
 edition = "2021"
 
-[build-dependencies]
-kernel = { path = "kernel", artifact = "staticlib", target = "x86_64-unknown-none" }
-# os = { path = "os", artifact = "staticlib", target = "x86_64-unknown-none" }
+[dependencies]
+good_memory_allocator = "0.1.7"
+spin = "0.9.8"
+uart_16550 = "0.3.0"
+volatile = "0.5.1"
+# x2apic = "0.4.3"
+pic8259 = "0.10.1"
+x86_64 = "0.14.10"
+lazy_static = { version = "1.4.0", default-features = false, features = ["spin_no_std"] }
+pc-keyboard = "0.7.0"
 
-[workspace]
-# members = ["kernel", "os"]
-members = ["kernel"]
+[dependencies.circular-buffer]
+version = "0.1.6"
+default-features = false
 
-[profile.dev]
-panic = "abort"
+[dependencies.multiboot2]
+version = "0.18.1"
+default-features = false
 
-[profile.release]
-panic = "abort"
+[dependencies.crossbeam-queue]
+version = "0.3.8"
+default-features = false
+features = ["alloc"]
 
-[[test]]
-name = "test"
-path = "src/test.rs"
-harness = false
+[dependencies.conquer-once]
+version = "0.2.0"
+default-features = false
+
+[dependencies.futures-util]
+version = "0.3.28"
+default-features = false
+features = ["alloc"]
+
+[lib]
+name = "kernel"
+path = "src/lib.rs"
+crate-type = ["staticlib"]

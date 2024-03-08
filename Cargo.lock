@@ -114,25 +114,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "kernel"
-version = "1.0.0"
-dependencies = [
- "circular-buffer",
- "conquer-once",
- "crossbeam-queue",
- "futures-util",
- "good_memory_allocator",
- "lazy_static",
- "multiboot2",
- "pc-keyboard",
- "pic8259",
- "spin 0.9.8",
- "uart_16550",
- "volatile 0.5.1",
- "x86_64",
-]
-
-[[package]]
 name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -248,7 +229,19 @@ dependencies = [
 name = "rikos"
 version = "0.1.0"
 dependencies = [
- "kernel",
+ "circular-buffer",
+ "conquer-once",
+ "crossbeam-queue",
+ "futures-util",
+ "good_memory_allocator",
+ "lazy_static",
+ "multiboot2",
+ "pc-keyboard",
+ "pic8259",
+ "spin 0.9.8",
+ "uart_16550",
+ "volatile 0.5.1",
+ "x86_64",
 ]
 
 [[package]]
